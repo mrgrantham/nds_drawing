@@ -46,17 +46,20 @@ typedef volatile signed short vs16;
 void setPixel3_main(int row, int col, u16 color);
 void setPixel3_sub(int row, int col, u16 color);
 void drawRect3_main(int row, int col, int width, int height, u16 color);
-void drawRect3_sub(int row, int col, int width, int height, u16 color) {
+void drawRect3_sub(int row, int col, int width, int height, u16 color);
 
 int main(void) {
-    int i;
 
+    // Set both displays to mode3 and turn on bg3 for each
     REG_DISPCNT_MAIN = MODE3 | BG3_ENABLE;
     REG_DISPCNT_SUB = MODE3 | BG3_ENABLE;
 
+    // Set bg3 on both displays large enough to fill the screen, use 15 bit
+    // RGB color values, and look for bitmap data at character base block 1.
     REG_BG3CNT =  BG_256x256 | BG_15BITCOLOR | BG_CBB1;
     REG_BG3CNT_SUB = BG_256x256 | BG_15BITCOLOR | BG_CBB1;
 
+    // Don't scale bg3 (set its affine transformation matrix to [[1,0],[0,1]])
     REG_BG3PA = 1 << 8;
     REG_BG3PD = 1 << 8;
 
@@ -65,6 +68,7 @@ int main(void) {
 
     drawRect3_main(20, 100, 42, 100, COLOR(31, 15, 0));
 
+    int i;
     for (i=0; i<256; i++) {
         setPixel3_sub(i,i, COLOR(0,15,31));
     }
