@@ -4,6 +4,8 @@ typedef volatile unsigned short vu16;
 typedef volatile unsigned char vu8;
 typedef volatile signed short vs16;
 
+#define SCANLINECOUNTER *(vu16 *)0x4000006
+
 #define VIDEO_BUFFER_MAIN ((u16 *)0x06000000)
 #define VIDEO_BUFFER_SUB  ((u16 *)0x06200000)
 
@@ -36,7 +38,8 @@ typedef volatile signed short vs16;
 
 #define OFFSET(r,c,w) ((r)*(w)+(c))
 
-#define SCREENWIDTH (256)
+#define SCREENWIDTH  (256)
+#define SCREENHEIGHT (192)
 
 #define REG_BG3PA        (*(vs16*)0x4000030)
 #define REG_BG3PD        (*(vs16*)0x4000036)
@@ -47,9 +50,24 @@ void setPixel3_main(int row, int col, u16 color);
 void setPixel3_sub(int row, int col, u16 color);
 void drawRect3_main(int row, int col, int width, int height, u16 color);
 void drawRect3_sub(int row, int col, int width, int height, u16 color);
+void initialize_ball();
+void update();
+void draw();
+void waitForVblank();
+
+typedef struct ball {
+    int row;
+    int col;
+    int size;
+    int rdel;
+    int cdel;
+    u16 color;
+} ball;
+
+ball ball_main;
+ball old_ball_main;
 
 int main(void) {
-
     // Set both displays to mode3 and turn on bg3 for each
     REG_DISPCNT_MAIN = MODE3 | BG3_ENABLE;
     REG_DISPCNT_SUB = MODE3 | BG3_ENABLE;
@@ -66,16 +84,74 @@ int main(void) {
     REG_BG3PA_SUB = 1 << 8;
     REG_BG3PD_SUB= 1 << 8;
 
-    drawRect3_main(20, 100, 42, 100, COLOR(31, 15, 0));
-
+    // Draw some stuff on the subdisplay
+    drawRect3_sub(20, 100, 100, 42, COLOR(31, 0, 15));
     int i;
     for (i=0; i<256; i++) {
         setPixel3_sub(i,i, COLOR(0,15,31));
     }
 
-    while(1);
+    initialize_ball();
+
+    // main loop
+    while(1) {
+        update();
+        waitForVblank();
+        draw();
+    }
 
     return 0;
+}
+
+void initialize_ball() {
+    ball_main.row = 10;
+    ball_main.col= 10;
+    ball_main.size = 5;
+    ball_main.rdel= 1;
+    ball_main.cdel = 2;
+    ball_main.color = COLOR(15,27,7);
+}
+
+void update() {
+    old_ball_main = ball_main;
+
+    // move ball
+    ball_main.row += ball_main.rdel;
+    ball_main.col+= ball_main.cdel;
+
+    // check for collisions with the sides of the screen
+    if (ball_main.row + ball_main.size > SCREENHEIGHT) {
+        ball_main.row = SCREENHEIGHT - ball_main.size;
+        ball_main.rdel *= -1;
+    }
+    if (ball_main.col + ball_main.size > SCREENWIDTH) {
+        ball_main.col = SCREENWIDTH- ball_main.size;
+        ball_main.cdel *= -1;
+    }
+    if (ball_main.row < 0) {
+        ball_main.row = 0;
+        ball_main.rdel *= -1;
+    }
+    if (ball_main.col< 0) {
+        ball_main.col = 0;
+        ball_main.cdel *= -1;
+    }
+}
+
+void draw() {
+    // erase the ball
+    drawRect3_main(old_ball_main.row,
+                   old_ball_main.col,
+                   old_ball_main.size,
+                   old_ball_main.size,
+                   0);
+
+    // draw it in its new position
+    drawRect3_main(ball_main.row,
+                   ball_main.col,
+                   ball_main.size,
+                   ball_main.size,
+                   ball_main.color);
 }
 
 void setPixel3_main(int row, int col, u16 color) {
@@ -103,5 +179,10 @@ void drawRect3_sub(int row, int col, int width, int height, u16 color) {
             setPixel3_sub(r, c, color);
         }
     }
+}
+
+void waitForVblank() {
+    while (SCANLINECOUNTER > SCREENHEIGHT);
+    while (SCANLINECOUNTER < SCREENHEIGHT);
 }
 
