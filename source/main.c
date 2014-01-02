@@ -55,17 +55,17 @@ void update();
 void draw();
 void waitForVblank();
 
-typedef struct ball {
+typedef struct BALL {
     int row;
     int col;
     int size;
     int rdel;
     int cdel;
     u16 color;
-} ball;
+} BALL;
 
-ball ball_main;
-ball old_ball_main;
+BALL ball_main;
+BALL old_ball_main;
 
 int main(void) {
     // Set both displays to mode3 and turn on bg3 for each
