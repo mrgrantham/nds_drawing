@@ -399,8 +399,10 @@ void drawLine3_main(POINT p1, POINT p2, u16 color) {
         // destnation coordinates
         if (x == x1 && y == y1) break;
         e2 = err;
-        if (err >-dx) { err -= dy; x += sx; }
-        if (err < dy) { err += dx; y += sy; }
+        // e2 must be kept instead of using err
+        // since it is use twice
+        if (e2 >-dx) { err -= dy; x += sx; }
+        if (e2 < dy) { err += dx; y += sy; }
     }
 }
 
