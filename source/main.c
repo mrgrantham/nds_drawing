@@ -378,9 +378,15 @@ void drawLine3_main(POINT p1, POINT p2, u16 color) {
     int x = x0;
     int y = y0;
 
+    // this indicates in absolute value of the difference
+    // between starting coordinates and ending
     int dx = (x0 > x1) ? x0 - x1 : x1 - x0;
     int dy = (y0 > y1) ? y0 - y1 : y1 - y0;
 
+    // this is the step
+    // if the destnation is closer to the origin than
+    // the starting point then the step is negative
+    // indicating that it will go back
     int sx = (x0 < x1) ? 1 : -1;
     int sy = (y0 < y1) ? 1 : -1;
 
@@ -389,10 +395,12 @@ void drawLine3_main(POINT p1, POINT p2, u16 color) {
 
     for(;;) {
         setPixel3_main(y,x,color);
+        // check if x and y are equal to
+        // destnation coordinates
         if (x == x1 && y == y1) break;
         e2 = err;
-        if (e2 >-dx) { err -= dy; x += sx; }
-        if (e2 < dy) { err += dx; y += sy; }
+        if (err >-dx) { err -= dy; x += sx; }
+        if (err < dy) { err += dx; y += sy; }
     }
 }
 
